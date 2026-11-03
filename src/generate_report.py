@@ -16,7 +16,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, PageBreak,
-    Table, TableStyle, HRFlowable
+    Table, TableStyle, HRFlowable, Image
 )
 from xml.sax.saxutils import escape
 
@@ -28,6 +28,29 @@ REPORTS_DIR = ROOT / "outputs" / "reports"
 DOCX_PATH = REPORTS_DIR / "Iris_Classification_Project_Report.docx"
 PDF_PATH = REPORTS_DIR / "Iris_Classification_Project_Report.pdf"
 
+FIGURES_DIR = ROOT / "documentation" / "report_figures"
+
+FIGURE_CATALOG = [
+    ("histogram_sepal_length_cm.png", "Distribution of Sepal Length"),
+    ("histogram_sepal_width_cm.png", "Distribution of Sepal Width"),
+    ("histogram_petal_length_cm.png", "Distribution of Petal Length"),
+    ("histogram_petal_width_cm.png", "Distribution of Petal Width"),
+    ("boxplot_sepal_length_cm.png", "Boxplot of Sepal Length"),
+    ("boxplot_sepal_width_cm.png", "Boxplot of Sepal Width"),
+    ("boxplot_petal_length_cm.png", "Boxplot of Petal Length"),
+    ("boxplot_petal_width_cm.png", "Boxplot of Petal Width"),
+    ("pairplot.png", "Pairwise Feature Relationships"),
+    ("correlation_heatmap.png", "Feature Correlation Heatmap"),
+    ("species_distribution.png", "Iris Species Distribution"),
+    ("ovr_confusion_matrix.png", "OvR Confusion Matrix"),
+    ("softmax_confusion_matrix.png", "Softmax Confusion Matrix"),
+    ("multiclass_roc_curves.png", "Multiclass ROC Curves"),
+    ("multiclass_precision_recall.png", "Multiclass Precision-Recall Curves"),
+    ("decision_boundary_ovr_sepal_length_cm_sepal_width_cm.png", "OvR Decision Boundary: Sepal Features"),
+    ("decision_boundary_softmax_sepal_length_cm_sepal_width_cm.png", "Softmax Decision Boundary: Sepal Features"),
+    ("decision_boundary_ovr_petal_length_cm_petal_width_cm.png", "OvR Decision Boundary: Petal Features"),
+    ("decision_boundary_softmax_petal_length_cm_petal_width_cm.png", "Softmax Decision Boundary: Petal Features"),
+]
 
 def read_markdown():
     if not SOURCE.exists():
@@ -81,6 +104,39 @@ def set_word_page_number(section):
     field.set(qn("w:instr"), "PAGE")
     footer._p.append(field)
 
+def add_docx_figure_appendix(doc):
+    """Add all project figures to the Word report."""
+
+    doc.add_page_break()
+    doc.add_heading("APPENDIX C: PROJECT FIGURES", level=1)
+
+    for index, (filename, caption) in enumerate(FIGURE_CATALOG, start=1):
+        image_path = FIGURES_DIR / filename
+
+        if not image_path.exists():
+            raise FileNotFoundError(
+                f"Required report figure not found: {image_path}"
+            )
+
+        # Keep each figure on its own page.
+        if index > 1:
+            doc.add_page_break()
+
+        image_paragraph = doc.add_paragraph()
+        image_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        image_paragraph.add_run().add_picture(
+            str(image_path),
+            width=Inches(5.8)
+        )
+
+        caption_paragraph = doc.add_paragraph()
+        caption_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        caption_run = caption_paragraph.add_run(
+            f"Figure C.{index}: {caption}"
+        )
+        caption_run.bold = True
+        caption_run.font.size = Pt(10)
 
 def build_docx(lines):
     doc = Document()
@@ -231,6 +287,8 @@ def build_docx(lines):
 
         i += 1
 
+    add_docx_figure_appendix(doc)
+    
     doc.save(DOCX_PATH)
     print(f"DOCX created: {DOCX_PATH}")
 
@@ -250,6 +308,44 @@ def add_pdf_page_number(canvas, document):
     canvas.drawCentredString(A4[0] / 2, 0.4 * inch, str(document.page))
     canvas.restoreState()
 
+def add_pdf_figure_appendix(story, styles):
+    """Add all project figures to the PDF report."""
+
+    story.append(PageBreak())
+    story.append(Paragraph(
+        "APPENDIX C: PROJECT FIGURES",
+        styles["Chapter"]
+    ))
+    story.append(Spacer(1, 15))
+
+    for index, (filename, caption) in enumerate(
+        FIGURE_CATALOG, start=1
+    ):
+        image_path = FIGURES_DIR / filename
+
+        if not image_path.exists():
+            raise FileNotFoundError(
+                f"Required report figure not found: {image_path}"
+            )
+
+        if index > 1:
+            story.append(PageBreak())
+
+        figure = Image(
+            str(image_path),
+            width=6.0 * inch,
+            height=5.0 * inch,
+            kind="proportional"
+        )
+        figure.hAlign = "CENTER"
+
+        story.append(figure)
+        story.append(Spacer(1, 12))
+
+        story.append(Paragraph(
+            f"<b>Figure C.{index}: {escape(caption)}</b>",
+            styles["SmallReport"]
+        ))
 
 def build_pdf(lines):
     styles = getSampleStyleSheet()
@@ -449,6 +545,8 @@ def build_pdf(lines):
         author="Nitya Jaiswal",
     )
 
+    add_pdf_figure_appendix(story, styles)
+    
     pdf.build(
         story,
         onFirstPage=add_pdf_page_number,
