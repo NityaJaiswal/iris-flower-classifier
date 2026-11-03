@@ -1,0 +1,20 @@
+
+flowchart TD
+    A[Input: Four Iris Features] --> B[StandardScaler]
+    B --> C[Scaled Feature Vector]
+    C --> D[One-vs-Rest Classifier]
+
+    D --> E[Classifier 1: Setosa vs Rest]
+    D --> F[Classifier 2: Versicolor vs Rest]
+    D --> G[Classifier 3: Virginica vs Rest]
+
+    E --> H[Probability: Setosa]
+    F --> I[Probability: Versicolor]
+    G --> J[Probability: Virginica]
+
+    H --> K[Compare Class Scores]
+    I --> K
+    J --> K
+
+    K --> L[Select Highest Score]
+    L --> M[Predicted Iris Species]

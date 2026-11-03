@@ -1,0 +1,28 @@
+
+flowchart TD
+    A[Load Iris CSV Dataset] --> B[Separate Features and Target]
+    B --> C[Stratified Train-Test Split]
+    C --> D[Training Set: 120 Samples]
+    C --> E[Testing Set: 30 Samples]
+
+    D --> F[Build OvR Pipeline]
+    D --> G[Build Softmax Pipeline]
+
+    F --> H[5-Fold Stratified Cross-Validation]
+    G --> H
+
+    H --> I[GridSearchCV: Tune C]
+    I --> J[Select Best Hyperparameters]
+    J --> K[Train Tuned Models]
+
+    K --> L[Evaluate on Unseen Test Set]
+    E --> L
+
+    L --> M[Accuracy, Precision, Recall, F1]
+    L --> N[ROC-AUC]
+    L --> O[Confusion Matrix and ROC/PR Curves]
+
+    M --> P[Compare OvR and Softmax]
+    N --> P
+    O --> P
+    P --> Q[Save Evaluation Results]

@@ -1,0 +1,15 @@
+
+flowchart TD
+    A[Input: Four Iris Features] --> B[StandardScaler]
+    B --> C[Scaled Feature Vector]
+    C --> D[Multiclass Logistic Regression]
+    D --> E[Calculate Class Scores]
+    E --> F[Apply Softmax Function]
+    F --> G[Setosa Probability]
+    F --> H[Versicolor Probability]
+    F --> I[Virginica Probability]
+    G --> J[Probability Distribution]
+    H --> J
+    I --> J
+    J --> K[Select Highest Probability]
+    K --> L[Predicted Iris Species]

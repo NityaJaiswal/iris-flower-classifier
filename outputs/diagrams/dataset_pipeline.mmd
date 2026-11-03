@@ -1,0 +1,24 @@
+
+flowchart TD
+    A[Scikit-learn Iris Dataset] --> B[150 Samples]
+    B --> C[4 Numerical Features]
+    B --> D[3 Species Classes]
+    C --> E[Sepal Length]
+    C --> F[Sepal Width]
+    C --> G[Petal Length]
+    C --> H[Petal Width]
+    D --> I[Setosa]
+    D --> J[Versicolor]
+    D --> K[Virginica]
+    E --> L[DataFrame Creation]
+    F --> L
+    G --> L
+    H --> L
+    I --> L
+    J --> L
+    K --> L
+    L --> M[Add Sample ID]
+    M --> N[Rename Columns]
+    N --> O[Create CSV Dataset]
+    O --> P[Data Quality Checks]
+    P --> Q[EDA and Preprocessing]

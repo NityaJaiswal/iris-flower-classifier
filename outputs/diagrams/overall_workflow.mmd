@@ -1,0 +1,19 @@
+
+flowchart TD
+    A([Start]) --> B[Load Iris Dataset from Scikit-learn]
+    B --> C[Data Cleaning and CSV Creation]
+    C --> D[Exploratory Data Analysis]
+    D --> E[Data Preprocessing]
+    E --> F[Stratified Train-Test Split]
+    F --> G[Feature Scaling using StandardScaler]
+    G --> H[Train Logistic Regression Models]
+    H --> I[One-vs-Rest Classifier]
+    H --> J[Softmax Logistic Regression]
+    I --> K[Hyperparameter Tuning]
+    J --> K
+    K --> L[Model Evaluation]
+    L --> M[Compare Model Performance]
+    M --> N[Decision Boundary Visualization]
+    N --> O[Interactive Prediction System]
+    O --> P[Automated Testing]
+    P --> Q([Final Iris Classification System])

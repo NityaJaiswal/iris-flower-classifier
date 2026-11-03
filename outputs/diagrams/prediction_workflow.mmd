@@ -1,0 +1,23 @@
+
+flowchart TD
+    A([Start Prediction System]) --> B[Load Tuned OvR Model]
+    B --> C[Load Tuned Softmax Model]
+    C --> D[Ask User for Four Measurements]
+    D --> E[Validate User Input]
+
+    E --> F{Are Inputs Valid?}
+    F -->|No| G[Display Error Message]
+    G --> D
+
+    F -->|Yes| H[Create Feature DataFrame]
+    H --> I[OvR Model Prediction]
+    H --> J[Softmax Model Prediction]
+
+    I --> K[Calculate Class Probabilities]
+    J --> L[Calculate Class Probabilities]
+
+    K --> M[Display OvR Results]
+    L --> N[Display Softmax Results]
+
+    M --> O([End])
+    N --> O
