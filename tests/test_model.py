@@ -95,3 +95,39 @@ def test_models_predict_same_class_for_setosa_sample():
 
     assert ovr.predict(sample)[0] == "Setosa"
     assert softmax.predict(sample)[0] == "Setosa"
+
+
+def test_loss_convergence_diagnostic_generates_valid_outputs():
+    from src.loss_convergence import compare_loss_convergence
+
+    history, figure_path, csv_path = compare_loss_convergence()
+
+    assert not history.empty
+    assert history["OvR_Aggregate_Binary_Cross_Entropy"].notna().all()
+    assert history["Softmax_Categorical_Cross_Entropy"].notna().all()
+    assert history["OvR_Aggregate_Binary_Cross_Entropy"].iloc[-1] < history["OvR_Aggregate_Binary_Cross_Entropy"].iloc[0]
+    assert history["Softmax_Categorical_Cross_Entropy"].iloc[-1] < history["Softmax_Categorical_Cross_Entropy"].iloc[0]
+    assert figure_path.exists()
+    assert csv_path.exists()
+
+
+def test_feature_coefficient_analysis_outputs_valid_data():
+    from src.feature_analysis import analyze_feature_coefficients
+
+    detail, summary, comparison_path, heatmap_path = analyze_feature_coefficients()
+
+    assert len(detail) == 24  # 2 models x 3 species x 4 features
+    assert set(detail["Model"]) == {"OvR", "Softmax"}
+    assert detail["Coefficient"].map(np.isfinite).all()
+    assert len(summary) == 8  # 2 models x 4 features
+    assert comparison_path.exists()
+    assert heatmap_path.exists()
+
+
+def test_eda_visualization_command_generates_species_distribution():
+    from src.data_loader import load_and_prepare_dataset
+    from src.visualization import save_species_distribution
+    from src.config import FIGURES_DIR
+
+    save_species_distribution(load_and_prepare_dataset())
+    assert (FIGURES_DIR / "species_distribution.png").exists()

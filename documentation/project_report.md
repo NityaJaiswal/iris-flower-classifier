@@ -33,7 +33,7 @@ I further declare that this work has not been submitted elsewhere for the award 
 
 **Student Name:** Nitya Jaiswal  
 **Roll Number:** 2402841530051  
-**Date:** [Date]  
+**Date:** 05 November 2026  
 **Signature:** _______________
 
 ---
@@ -56,7 +56,7 @@ This project presents a comparative study of two approaches for multiclass Iris 
 
 The original Iris dataset available through Scikit-learn is used. It contains 150 observations belonging to three species: Setosa, Versicolor and Virginica. Each observation contains four numerical features: sepal length, sepal width, petal length and petal width.
 
-The project involves dataset preparation, exploratory data analysis, preprocessing, model implementation, hyperparameter tuning, evaluation and interactive prediction. Both classifiers are implemented using Scikit-learn pipelines with StandardScaler to standardize the input features.
+The project involves dataset preparation, exploratory data analysis, preprocessing, model implementation, hyperparameter tuning, evaluation and interactive prediction. Both classifiers are implemented using Scikit-learn pipelines with StandardScaler to standardize the input features. The project also includes a separate L-BFGS-B loss-convergence diagnostic and class-wise coefficient analysis to interpret the fitted models.
 
 Hyperparameter optimization is performed using GridSearchCV with five-fold Stratified Cross-Validation and macro F1-score as the scoring metric.
 
@@ -81,6 +81,53 @@ The results indicate that Softmax Logistic Regression performed better on the se
 9. Conclusion and Future Scope
 10. References
 11. Appendix
+
+---
+
+# LIST OF FIGURES AND TABLES
+
+## List of Figures
+
+1. Iris sepal length distribution histogram.
+2. Iris sepal width distribution histogram.
+3. Iris petal length distribution histogram.
+4. Iris petal width distribution histogram.
+5. Sepal length boxplot by species.
+6. Sepal width boxplot by species.
+7. Petal length boxplot by species.
+8. Petal width boxplot by species.
+9. Pairwise relationships among Iris features.
+10. Feature correlation heatmap.
+11. Iris species distribution.
+12. OvR confusion matrix.
+13. Softmax confusion matrix.
+14. Multiclass ROC curves.
+15. Multiclass precision-recall curves.
+16. OvR decision boundary using sepal features.
+17. Softmax decision boundary using sepal features.
+18. OvR decision boundary using petal features.
+19. Softmax decision boundary using petal features.
+20. OvR versus Softmax loss convergence.
+21. Mean absolute feature coefficient comparison.
+22. Class-wise OvR and Softmax coefficient heatmaps.
+
+## List of Tables
+
+1. Iris dataset attributes and data types.
+2. Iris target class distribution.
+3. Dataset descriptive statistics.
+4. Train-test partition summary.
+5. Preprocessing configuration.
+6. OvR and Softmax methodology comparison.
+7. Hyperparameter search configuration.
+8. Best hyperparameter results.
+9. Test-set performance comparison.
+10. Class-wise classification report for OvR.
+11. Class-wise classification report for Softmax.
+12. Loss convergence diagnostic results.
+13. Mean absolute coefficient comparison.
+14. Automated test cases and validation results.
+15. Sample flower measurements and predicted species probabilities.
 
 ---
 
@@ -321,6 +368,22 @@ Although its name contains the term regression, it is used to estimate class pro
 
 For binary classification, the sigmoid function is commonly used to map a linear score to a probability.
 
+### 4.1.1 Sigmoid Function for Binary Logistic Regression
+
+For a feature vector x, the linear score is z = w^T x + b. The sigmoid function converts this score into a probability:
+
+P(y = 1 | x) = 1 / (1 + exp(-z))
+
+The predicted probability lies between 0 and 1. A classification threshold is then used to assign a binary class.
+
+### 4.1.2 Binary Cross-Entropy Loss
+
+For N observations with binary labels y_i and predicted probabilities p_i, the binary cross-entropy objective is:
+
+L_binary = -(1/N) * sum[i=1 to N] { y_i log(p_i) + (1-y_i) log(1-p_i) }
+
+An L2 regularization term penalizes large feature weights. In the diagnostic convergence experiment, the objective is L_binary + (lambda/2) * ||w||^2, where lambda = 1/(C*N) for the mean-loss objective used by the L-BFGS diagnostic. The intercept is not penalized.
+
 ## 4.2 One-vs-Rest Classification
 
 One-vs-Rest is a strategy used to extend binary classifiers to multiclass classification problems.
@@ -334,6 +397,12 @@ In this project:
 - Classifier 1: Setosa versus the remaining classes.
 - Classifier 2: Versicolor versus the remaining classes.
 - Classifier 3: Virginica versus the remaining classes.
+
+For K classes, OvR trains K binary classifiers. For class k, the binary target is y_k = 1 when the observation belongs to class k and 0 otherwise. Each classifier estimates P(y_k = 1 | x) using its own sigmoid model. The class with the highest decision score is selected as the prediction. The separately returned probability estimates should not be confused with the OvR decision scores used by the classifier for class selection.
+
+The OvR diagnostic objective aggregates the K binary losses:
+
+L_OvR = sum[k=1 to K] L_binary,k
 
 For a new observation, the model produces a score for each class. The class with the highest score is selected as the prediction.
 
@@ -355,6 +424,16 @@ where:
 - The probabilities across all classes sum to 1.
 
 The class with the highest predicted probability is selected.
+
+For K classes, the class score is z_k = w_k^T x + b_k. The Softmax probability is:
+
+P(y = k | x) = exp(z_k) / sum[j=1 to K] exp(z_j)
+
+The categorical cross-entropy objective is:
+
+L_softmax = -(1/N) * sum[i=1 to N] log(P(y_i | x_i))
+
+With L2 regularization, the diagnostic objective is L_softmax + (lambda/2) * sum[k=1 to K] ||w_k||^2, where lambda = 1/(C*N). The class biases are not penalized.
 
 ## 4.4 Difference Between OvR and Softmax
 
@@ -454,6 +533,23 @@ Saved model files include:
 - `models/softmax_tuned_model.joblib`
 
 This allows the prediction system to load trained models without retraining them every time.
+
+## 5.6 Loss Convergence Comparison
+
+The project includes a separate optimization diagnostic to compare how the OvR and Softmax objectives decrease during training. The diagnostic uses the same stratified training partition as the main experiment, fits StandardScaler only on the training data, and uses C = 10, the value selected by the hyperparameter search.
+
+Scikit-learn's LogisticRegression does not expose a complete per-iteration loss history. Therefore, the diagnostic explicitly minimizes the corresponding regularized logistic objectives using the L-BFGS-B optimizer and records the objective after each iteration. This is a transparent convergence diagnostic; it is not presented as the internal iteration log of the Scikit-learn estimator.
+
+| Diagnostic | OvR | Softmax |
+|---|---:|---:|
+| Optimizer | L-BFGS-B | L-BFGS-B |
+| Iterations | 22, 17 and 22 for the three binary classifiers | 41 |
+| Optimizer status | All three successful | Successful |
+| Final objective | 0.57475 (aggregate binary loss) | 0.09249 (categorical loss) |
+
+The diagnostic uses the mean-loss L2 scaling lambda = 1/(C*N), with N equal to the 120 training observations. The OvR objective is the sum of three binary cross-entropy objectives, while Softmax uses categorical cross-entropy. Their final numerical loss magnitudes are therefore not directly comparable as identical quantities. The plot is used to examine convergence behaviour and the reduction in each model's own objective.
+
+The figure is saved as `outputs/figures/ovr_vs_softmax_loss_convergence.png`, and the iteration history is saved as `models/loss_convergence_history.csv`.
 
 ---
 
@@ -572,6 +668,23 @@ It also achieved a slightly higher five-fold cross-validation macro F1-score.
 
 However, the test dataset contains only 30 observations. Therefore, the results should be interpreted as performance on this particular split rather than proof of perfect performance on unseen real-world data.
 
+## 6.9 Feature Coefficient Analysis and Model Insights
+
+The tuned logistic-regression pipelines were examined using their learned coefficients. Since StandardScaler is applied before classification, the coefficients describe the change in a class log-odds value (OvR) or class logit (Softmax) associated with a one-standard-deviation increase in a feature, holding the other features constant.
+
+The mean absolute coefficient magnitudes across the three species are:
+
+| Feature | OvR Mean Absolute Coefficient | Softmax Mean Absolute Coefficient |
+|---|---:|---:|
+| Petal length | 3.4275 | 2.9705 |
+| Petal width | 3.4724 | 3.0849 |
+| Sepal length | 0.7378 | 1.2006 |
+| Sepal width | 1.3125 | 1.1480 |
+
+Petal length and petal width have larger mean absolute coefficient magnitudes than the sepal measurements in both fitted models. This indicates that the models rely more strongly on petal measurements for separating the species in this dataset. Coefficient magnitude is model-specific and should not be interpreted as a causal effect or as a universal feature-importance measure. The sign of a coefficient indicates the direction of its contribution to a particular class score.
+
+Detailed values are saved in `models/model_coefficients_by_species.csv`, and the mean absolute coefficient summary is saved in `models/feature_coefficient_importance.csv`.
+
 ---
 
 # CHAPTER 7: INTERACTIVE PREDICTION SYSTEM
@@ -654,7 +767,7 @@ The tests verify dataset integrity, preprocessing, model loading, prediction val
 
 ## 8.2 Automated Test Cases
 
-The following eight tests were implemented:
+The following eleven tests were implemented:
 
 | Test | Purpose |
 |---|---|
@@ -666,6 +779,9 @@ The following eight tests were implemented:
 | Valid predictions | Confirm predictions belong to valid species |
 | Probability validation | Check probability range and sum |
 | Setosa sample prediction | Verify both models classify the example correctly |
+| Loss convergence diagnostic | Verify both optimization objectives decrease and output files are generated |
+| Feature coefficient analysis | Verify class-wise coefficients and importance outputs |
+| EDA visualization execution | Verify the species distribution visualization can be generated |
 
 ## 8.3 Test Execution Results
 
@@ -675,9 +791,9 @@ The test command was:
 
 Actual result:
 
-**8 passed in 3.88 seconds**
+**11 passed**
 
-All eight automated tests passed successfully.
+All eleven automated tests passed in the final validation run. The independent validation run completed without warnings. An earlier local run reported two non-failing Seaborn PendingDeprecationWarning messages. The four saved Joblib models were retrained or tuned and loaded successfully under Scikit-learn 1.9.1, matching the version specified in the project requirements. No Scikit-learn version-compatibility warnings were observed in this matching environment.
 
 This confirms that the tested components behaved as expected under the defined test conditions.
 
@@ -697,7 +813,7 @@ The OvR model achieved 93.33% test accuracy, while the Softmax model achieved 10
 
 The Softmax model also obtained a slightly higher cross-validation macro F1-score.
 
-The project demonstrates how different multiclass classification strategies can be implemented and compared using a consistent experimental setup.
+The project demonstrates how different multiclass classification strategies can be implemented and compared using a consistent experimental setup. The optimization diagnostic confirms that both model objectives converge successfully, while coefficient analysis shows that petal measurements have larger mean absolute coefficient magnitudes than sepal measurements in both fitted models.
 
 ## 9.2 Limitations
 
@@ -744,9 +860,9 @@ Possible future improvements include:
 The project is organized into the following main directories:
 
 - `data/` — Prepared Iris dataset.
-- `notebooks/` — Exploratory analysis notebook.
+- `notebooks/` — Complete notebook covering EDA, model training, tuning, evaluation and coefficient analysis.
 - `src/` — Python source modules.
-- `models/` — Trained and tuned machine learning models.
+- `models/` — Trained and tuned models, comparison results, convergence history and coefficient analysis CSV files.
 - `outputs/figures/` — EDA and evaluation visualizations.
 - `outputs/diagrams/` — Mermaid architecture and workflow diagrams.
 - `outputs/reports/` — Generated reports and result files.
@@ -779,6 +895,18 @@ Generate decision boundaries:
 
 `python -m src.decision_boundary`
 
+Compare OvR and Softmax loss convergence:
+
+`python -m src.loss_convergence`
+
+Analyze learned feature coefficients:
+
+`python -m src.feature_analysis`
+
+Generate the complete academic report:
+
+`python -m src.generate_report`
+
 Run interactive prediction:
 
 `python -m src.predict`
@@ -786,6 +914,85 @@ Run interactive prediction:
 Execute automated tests:
 
 `python -m pytest -v`
+
+# APPENDIX C: CORE IMPLEMENTATION CODE
+
+The following concise implementation excerpts show the main training, tuning, evaluation and prediction workflow. The complete source modules are available in the `src/` directory of the submitted project.
+
+## C.1 Model Pipeline Construction
+
+```python
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.pipeline import Pipeline
+
+ovr_model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("classifier", OneVsRestClassifier(
+        LogisticRegression(C=1.0, solver="lbfgs", max_iter=1000)
+    ))
+])
+
+softmax_model = Pipeline([
+    ("scaler", StandardScaler()),
+    ("classifier", LogisticRegression(
+        C=1.0, solver="lbfgs", max_iter=1000
+    ))
+])
+```
+
+## C.2 Stratified Train-Test Split
+
+```python
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, random_state=42, stratify=y
+)
+```
+
+## C.3 Hyperparameter Optimization
+
+```python
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+search = GridSearchCV(
+    estimator=model_pipeline,
+    param_grid={"classifier__C": [0.01, 0.1, 1, 10, 100]},
+    scoring="f1_macro", cv=cv, n_jobs=-1
+)
+search.fit(X_train, y_train)
+best_model = search.best_estimator_
+```
+
+For the OvR pipeline, the corresponding parameter name is `classifier__estimator__C`.
+
+## C.4 Model Evaluation
+
+```python
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
+
+y_pred = best_model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+macro_f1 = f1_score(y_test, y_pred, average="macro")
+confusion = confusion_matrix(y_test, y_pred)
+```
+
+## C.5 Prediction from Botanical Measurements
+
+```python
+import pandas as pd
+
+sample = pd.DataFrame(
+    [[5.1, 3.5, 1.4, 0.2]],
+    columns=["sepal_length_cm", "sepal_width_cm",
+             "petal_length_cm", "petal_width_cm"]
+)
+predicted_species = best_model.predict(sample)[0]
+class_probabilities = best_model.predict_proba(sample)[0]
+```
 
 ---
 

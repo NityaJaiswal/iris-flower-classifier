@@ -16,9 +16,10 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, PageBreak,
-    Table, TableStyle, HRFlowable, Image
+    Table, TableStyle, HRFlowable, Image, Flowable, Preformatted
 )
 from xml.sax.saxutils import escape
+from PIL import Image as PILImage
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -50,6 +51,9 @@ FIGURE_CATALOG = [
     ("decision_boundary_softmax_sepal_length_cm_sepal_width_cm.png", "Softmax Decision Boundary: Sepal Features"),
     ("decision_boundary_ovr_petal_length_cm_petal_width_cm.png", "OvR Decision Boundary: Petal Features"),
     ("decision_boundary_softmax_petal_length_cm_petal_width_cm.png", "Softmax Decision Boundary: Petal Features"),
+    ("ovr_vs_softmax_loss_convergence.png", "OvR vs Softmax Loss Convergence"),
+    ("feature_coefficient_importance.png", "Mean Absolute Feature Coefficient Comparison"),
+    ("model_coefficient_heatmaps.png", "Class-wise OvR and Softmax Coefficient Heatmaps"),
 ]
 
 def read_markdown():
@@ -108,7 +112,7 @@ def add_docx_figure_appendix(doc):
     """Add all project figures to the Word report."""
 
     doc.add_page_break()
-    doc.add_heading("APPENDIX C: PROJECT FIGURES", level=1)
+    doc.add_heading("APPENDIX D: PROJECT FIGURES", level=1)
 
     for index, (filename, caption) in enumerate(FIGURE_CATALOG, start=1):
         image_path = FIGURES_DIR / filename
@@ -124,16 +128,21 @@ def add_docx_figure_appendix(doc):
 
         image_paragraph = doc.add_paragraph()
         image_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # Fit both landscape and portrait figures within a readable page area.
+        with PILImage.open(image_path) as source_image:
+            width_px, height_px = source_image.size
+        scale = min(5.9 / width_px, 6.6 / height_px)
+        display_width = Inches(width_px * scale)
+        display_height = Inches(height_px * scale)
         image_paragraph.add_run().add_picture(
-            str(image_path),
-            width=Inches(5.8)
+            str(image_path), width=display_width, height=display_height
         )
 
         caption_paragraph = doc.add_paragraph()
         caption_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         caption_run = caption_paragraph.add_run(
-            f"Figure C.{index}: {caption}"
+            f"Figure D.{index}: {caption}"
         )
         caption_run.bold = True
         caption_run.font.size = Pt(10)
@@ -184,20 +193,105 @@ def build_docx(lines):
     r.font.size = Pt(15)
 
     for value in [
-    "\n\nPROJECT REPORT",
-    "\n\nSubmitted in partial fulfilment of the requirements for",
-    "\nBachelor of Technology",
-    "\nComputer Science and Engineering – Artificial Intelligence and Machine Learning",
-    "\n\nSubmitted by: Nitya Jaiswal",
-    "\nRoll Number: 2402841530051",
-    "\n\nUnder the Guidance of: Mr. Gaurav Narain Singh",
-    "\n\nUnited Institute of Technology, Naini, Prayagraj",
-    "\nDr. A.P.J. Abdul Kalam Technical University (AKTU), Uttar Pradesh",
-    "\nAcademic Session: 2026–2027",
-]:
+        "\n\nPROJECT REPORT",
+        "\n\nSubmitted in partial fulfilment of the requirements for",
+        "\nBachelor of Technology",
+        "\nComputer Science and Engineering – Artificial Intelligence and Machine Learning",
+        "\n\nSubmitted by: Nitya Jaiswal",
+        "\nRoll Number: 2402841530051",
+        "\n\nUnder the Guidance of: Mr. Gaurav Narain Singh",
+        "\n\nUnited Institute of Technology, Naini, Prayagraj",
+        "\nDr. A.P.J. Abdul Kalam Technical University (AKTU), Uttar Pradesh",
+        "\nAcademic Session: 2026–2027",
+    ]:
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run(value)
+
+        # Start the Table of Contents on a new page.
+    doc.add_page_break()
+
+    # Static Table of Contents: no Word field update required.
+    toc_heading = doc.add_heading("TABLE OF CONTENTS", level=1)
+    toc_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    toc_entries = [
+        ("DECLARATION", 0),
+        ("ACKNOWLEDGEMENT", 0),
+        ("ABSTRACT", 0),
+        ("CHAPTER 1: INTRODUCTION", 0),
+        ("1.1 Background", 1),
+        ("1.2 Problem Statement", 1),
+        ("1.3 Objectives", 1),
+        ("1.4 Scope", 1),
+        ("1.5 Software and Technologies Used", 1),
+        ("CHAPTER 2: DATASET DESCRIPTION AND EXPLORATORY DATA ANALYSIS", 0),
+        ("2.1 Dataset Overview", 1),
+        ("2.2 Input Features", 1),
+        ("2.3 Target Classes", 1),
+        ("2.4 Dataset Preparation", 1),
+        ("2.5 Exploratory Data Analysis", 1),
+        ("2.6 Statistical Observations", 1),
+        ("2.7 Data Quality Findings", 1),
+        ("2.8 EDA Visualizations", 1),
+        ("CHAPTER 3: DATA PREPROCESSING", 0),
+        ("3.1 Feature and Target Separation", 1),
+        ("3.2 Train-Test Split", 1),
+        ("3.3 Feature Standardization", 1),
+        ("3.4 Preprocessing Configuration", 1),
+        ("CHAPTER 4: METHODOLOGY AND ALGORITHM DESIGN", 0),
+        ("4.1 Logistic Regression", 1),
+        ("4.2 One-vs-Rest Classification", 1),
+        ("4.3 Softmax Logistic Regression", 1),
+        ("4.4 Difference Between OvR and Softmax", 1),
+        ("4.5 Machine Learning Pipelines", 1),
+        ("CHAPTER 5: IMPLEMENTATION AND HYPERPARAMETER OPTIMIZATION", 0),
+        ("5.1 Development Environment", 1),
+        ("5.2 Model Training", 1),
+        ("5.3 Hyperparameter Tuning", 1),
+        ("5.4 Hyperparameter Optimization Results", 1),
+        ("5.5 Model Serialization", 1),
+        ("5.6 Loss Convergence Comparison", 1),
+        ("CHAPTER 6: RESULTS AND PERFORMANCE EVALUATION", 0),
+        ("6.1 Evaluation Method", 1),
+        ("6.2 Evaluation Metrics", 1),
+        ("6.3 Test Set Results", 1),
+        ("6.4 Class-wise Classification Results", 1),
+        ("6.5 Confusion Matrix Analysis", 1),
+        ("6.6 ROC and Precision-Recall Analysis", 1),
+        ("6.7 Decision Boundary Visualization", 1),
+        ("6.8 Comparative Analysis", 1),
+        ("6.9 Feature Coefficient Analysis and Model Insights", 1),
+        ("CHAPTER 7: INTERACTIVE PREDICTION SYSTEM", 0),
+        ("7.1 System Overview", 1),
+        ("7.2 User Input", 1),
+        ("7.3 Prediction Process", 1),
+        ("7.4 Sample Prediction", 1),
+        ("CHAPTER 8: TESTING AND VALIDATION", 0),
+        ("8.1 Testing Approach", 1),
+        ("8.2 Automated Test Cases", 1),
+        ("8.3 Test Execution Results", 1),
+        ("CHAPTER 9: CONCLUSION AND FUTURE SCOPE", 0),
+        ("9.1 Conclusion", 1),
+        ("9.2 Limitations", 1),
+        ("9.3 Future Scope", 1),
+        ("CHAPTER 10: REFERENCES", 0),
+        ("LIST OF FIGURES AND TABLES", 0),
+        ("APPENDIX A: PROJECT DIRECTORY STRUCTURE", 0),
+        ("APPENDIX B: IMPORTANT EXECUTION COMMANDS", 0),
+        ("APPENDIX C: CORE IMPLEMENTATION CODE", 0),
+        ("APPENDIX D: PROJECT FIGURES", 0),
+    ]
+
+    for entry, level in toc_entries:
+        p = doc.add_paragraph()
+        p.paragraph_format.left_indent = Inches(0.25 if level else 0)
+        p.paragraph_format.space_after = Pt(3)
+
+        run = p.add_run(entry)
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(9.5 if level else 10.5)
+        run.bold = (level == 0)
 
     doc.add_page_break()
 
@@ -213,6 +307,26 @@ def build_docx(lines):
         line = lines[i].strip()
 
         if not line or line == "---":
+            i += 1
+            continue
+
+        if line.startswith("```"):
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i].rstrip("\n"))
+                i += 1
+            code_paragraph = doc.add_paragraph()
+            code_paragraph.paragraph_format.left_indent = Inches(0.15)
+            code_paragraph.paragraph_format.right_indent = Inches(0.15)
+            code_paragraph.paragraph_format.space_before = Pt(4)
+            code_paragraph.paragraph_format.space_after = Pt(8)
+            for code_index, code_line in enumerate(code_lines):
+                if code_index:
+                    code_paragraph.add_run().add_break()
+                code_run = code_paragraph.add_run(code_line or " ")
+                code_run.font.name = "Consolas"
+                code_run.font.size = Pt(8)
             i += 1
             continue
 
@@ -269,16 +383,17 @@ def build_docx(lines):
         elif line.startswith("### "):
             doc.add_heading(line[4:].strip(), level=3)
 
-        elif line.startswith("- ") or re.match(r"^\d+\.\s", line):
-            if line.startswith("- "):
-                content = line[2:]
-                style = "List Bullet"
-            else:
-                content = re.sub(r"^\d+\.\s", "", line)
-                style = "List Number"
-
-            p = doc.add_paragraph(style=style)
+        elif line.startswith("- "):
+            content = line[2:]
+            p = doc.add_paragraph(style="List Bullet")
             add_word_runs(p, content)
+
+        elif re.match(r"^\d+\.\s", line):
+            # Preserve Markdown numbering and prevent Word from
+            # continuing automatic numbering across separate lists.
+            p = doc.add_paragraph()
+            add_word_runs(p, line)
+            p.paragraph_format.left_indent = Inches(0.25)
 
         else:
             p = doc.add_paragraph()
@@ -313,7 +428,7 @@ def add_pdf_figure_appendix(story, styles):
 
     story.append(PageBreak())
     story.append(Paragraph(
-        "APPENDIX C: PROJECT FIGURES",
+        "APPENDIX D: PROJECT FIGURES",
         styles["Chapter"]
     ))
     story.append(Spacer(1, 15))
@@ -331,11 +446,16 @@ def add_pdf_figure_appendix(story, styles):
         if index > 1:
             story.append(PageBreak())
 
+        # Scale each figure to the largest readable size within the page frame.
+        from PIL import Image as PILImage
+        with PILImage.open(image_path) as source_image:
+            image_width, image_height = source_image.size
+        max_width, max_height = 6.9 * inch, 7.1 * inch
+        scale = min(max_width / image_width, max_height / image_height)
         figure = Image(
             str(image_path),
-            width=6.0 * inch,
-            height=5.0 * inch,
-            kind="proportional"
+            width=image_width * scale,
+            height=image_height * scale
         )
         figure.hAlign = "CENTER"
 
@@ -343,7 +463,7 @@ def add_pdf_figure_appendix(story, styles):
         story.append(Spacer(1, 12))
 
         story.append(Paragraph(
-            f"<b>Figure C.{index}: {escape(caption)}</b>",
+            f"<b>Figure D.{index}: {escape(caption)}</b>",
             styles["SmallReport"]
         ))
 
@@ -410,6 +530,18 @@ def build_pdf(lines):
         leading=12,
     ))
 
+    styles.add(ParagraphStyle(
+        name="CodeBlock",
+        parent=styles["Code"],
+        fontName="Courier",
+        fontSize=7.5,
+        leading=9,
+        leftIndent=8,
+        rightIndent=8,
+        spaceBefore=5,
+        spaceAfter=9,
+    ))
+
     story = []
 
     # PDF title page
@@ -455,6 +587,16 @@ def build_pdf(lines):
         line = lines[i].strip()
 
         if not line or line == "---":
+            i += 1
+            continue
+
+        if line.startswith("```"):
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i].rstrip("\n"))
+                i += 1
+            story.append(Preformatted("\n".join(code_lines), styles["CodeBlock"]))
             i += 1
             continue
 
@@ -520,9 +662,13 @@ def build_pdf(lines):
             ))
 
         elif line.startswith("- ") or re.match(r"^\d+\.\s", line):
-            content = re.sub(r"^(-|\d+\.)\s*", "", line)
+            numbered = re.match(r"^(\d+)\.\s+(.*)$", line)
+            if numbered:
+                marker, content = f"{numbered.group(1)}.", numbered.group(2)
+            else:
+                marker, content = "&#8226;", line[2:]
             story.append(Paragraph(
-                "&#8226; " + pdf_inline(content),
+                marker + " " + pdf_inline(content),
                 styles["BodyReport"]
             ))
 
