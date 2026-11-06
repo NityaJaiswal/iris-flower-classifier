@@ -53,7 +53,9 @@ Both models use StandardScaler within their pipelines.
 7. Model evaluation
 8. Decision-boundary visualization
 9. Interactive prediction
-10. Automated testing
+10. Loss convergence comparison (OvR vs Softmax)
+11. Coefficient-based feature interpretation
+12. Automated testing
 
 ## Results
 
@@ -81,9 +83,14 @@ iris-flower-classifier/
 ├── models/
 │   ├── ovr_model.joblib
 │   ├── softmax_model.joblib
-│   └── model_comparison.csv
+│   ├── ovr_tuned_model.joblib
+│   ├── softmax_tuned_model.joblib
+│   ├── model_comparison.csv
+│   ├── loss_convergence_history.csv
+│   ├── model_coefficients_by_species.csv
+│   └── feature_coefficient_importance.csv
 ├── notebooks/
-│   └── iris_classification_analysis.ipynb
+│   └── iris_classification_analysis.ipynb  # Complete EDA-to-evaluation workflow
 ├── outputs/
 │   ├── figures/
 │   ├── diagrams/
@@ -96,6 +103,8 @@ iris-flower-classifier/
 │   ├── train_model.py
 │   ├── hyperparameter_tuning.py
 │   ├── evaluate_model.py
+│   ├── loss_convergence.py
+│   ├── feature_analysis.py
 │   ├── decision_boundary.py
 │   ├── predict.py
 │   └── generate_report.py
@@ -140,6 +149,8 @@ Run these commands from the project root.
 python -m src.visualization
 ```
 
+This command loads the prepared Iris dataset and generates all EDA figures in `outputs/figures/`.
+
 ### Train the models
 
 ```bash
@@ -164,6 +175,22 @@ python -m src.evaluate_model
 python -m src.decision_boundary
 ```
 
+### Compare loss convergence
+
+```bash
+python -m src.loss_convergence
+```
+
+This diagnostic uses the stratified training split, fits `StandardScaler` on training data only, and uses the selected `C=10` value. It saves the convergence plot to `outputs/figures/ovr_vs_softmax_loss_convergence.png` and iteration history to `models/loss_convergence_history.csv`. The loss histories are generated with explicit L-BFGS-B objectives because Scikit-learn does not expose per-iteration loss history for `LogisticRegression`. OvR reports the sum of its three binary cross-entropy objectives, whereas Softmax reports categorical cross-entropy; compare the convergence trends and optimizer iterations, not the raw final loss magnitudes as if they were identical objectives.
+
+### Analyze learned feature coefficients
+
+```bash
+python -m src.feature_analysis
+```
+
+This command extracts class-wise coefficients from the tuned OvR and Softmax pipelines. It saves detailed coefficients and mean absolute coefficient summaries as CSV files, plus comparison and class-wise heatmap figures. Because the features are standardized, coefficient magnitudes describe changes in class log-odds/logits per one-standard-deviation feature change. They are model-specific associations, not causal effects or universal feature-importance scores.
+
 ### Interactive prediction
 
 ```bash
@@ -175,6 +202,8 @@ python -m src.predict
 ```bash
 python -m pytest -v
 ```
+
+The current project test suite contains 11 automated checks covering the dataset, preprocessing split, saved model predictions, probability outputs, loss-convergence diagnostics, coefficient analysis, and EDA visualization generation.
 
 ## Sample Prediction
 

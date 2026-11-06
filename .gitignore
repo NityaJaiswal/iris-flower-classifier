@@ -45,3 +45,10 @@ dist/
 # Temporary development files
 src/hello_test.py
 notebooks/test.ipynb
+# Coverage files
+.coverage
+htmlcov/
+
+# OS temporary files
+*.swp
+*.swo

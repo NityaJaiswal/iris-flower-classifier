@@ -128,9 +128,12 @@ def save_species_distribution(df):
 
     plt.figure(figsize=(8, 5))
 
-    sns.countplot(
-        data=df,
-        x=TARGET_COLUMN
+    species_counts = df[TARGET_COLUMN].value_counts().sort_index()
+    palette = sns.color_palette("Set2", n_colors=len(species_counts))
+    plt.bar(
+        species_counts.index,
+        species_counts.values,
+        color=palette
     )
 
     plt.title("Distribution of Iris Species")
@@ -158,3 +161,10 @@ def generate_all_visualizations(df):
 
     print("All EDA visualizations generated successfully!")
     print("Saved in:", FIGURES_DIR)
+
+
+if __name__ == "__main__":
+    from src.data_loader import load_and_prepare_dataset
+
+    dataset = load_and_prepare_dataset()
+    generate_all_visualizations(dataset)
